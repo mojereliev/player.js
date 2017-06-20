@@ -1,4 +1,4 @@
-/*! @vimeo/player v2.1.0 | (c) 2017 Vimeo | MIT License | https://github.com/vimeo/player.js */
+/*! @vimeo/player v2.1.1 | (c) 2017 Vimeo | MIT License | https://github.com/vimeo/player.js */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
@@ -813,11 +813,13 @@ function getVimeoUrl() {
     throw new TypeError('\u201C' + idOrUrl + '\u201D is not a vimeo.com url.');
 }
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 /**
  * @module lib/embed
  */
 
-var oEmbedParameters = ['id', 'url', 'width', 'maxwidth', 'height', 'maxheight', 'portrait', 'title', 'byline', 'color', 'autoplay', 'autopause', 'loop', 'responsive'];
+var oEmbedParameters = ['id', 'url', 'width', 'maxwidth', 'height', 'maxheight', 'portrait', 'title', 'byline', 'color', 'autoplay', 'autopause', 'loop', 'responsive', 'background'];
 
 /**
  * Get the 'data-vimeo'-prefixed attributes from an element as an object.
@@ -904,8 +906,19 @@ function getOEmbedData(videoUrl) {
  * @param {HTMLElement} element The element to put the iframe in.
  * @return {HTMLIFrameElement} The iframe embed.
  */
-function createEmbed(_ref, element) {
+function createEmbed(_ref, element, params) {
     var html = _ref.html;
+
+
+    if (params.background) {
+        var regular = /http([^"]+)/;
+        var url = html.match(regular)[0];
+        var separator = url.indexOf('?') < 0 ? '?' : '&';
+
+        url = '' + url + separator + 'background=1';
+
+        html = html.replace(regular, url);
+    }
 
     if (!element) {
         throw new TypeError('An element must be provided');
@@ -944,17 +957,23 @@ function initializeEmbeds() {
 
     elements.forEach(function (element) {
         try {
-            // Skip any that have data-vimeo-defer
-            if (element.getAttribute('data-vimeo-defer') !== null) {
-                return;
-            }
+            var _ret = function () {
+                // Skip any that have data-vimeo-defer
+                if (element.getAttribute('data-vimeo-defer') !== null) {
+                    return {
+                        v: void 0
+                    };
+                }
 
-            var params = getOEmbedParameters(element);
-            var url = getVimeoUrl(params);
+                var params = getOEmbedParameters(element);
+                var url = getVimeoUrl(params);
 
-            getOEmbedData(url, params).then(function (data) {
-                return createEmbed(data, element);
-            }).catch(handleError);
+                getOEmbedData(url, params).then(function (data) {
+                    return createEmbed(data, element, params);
+                }).catch(handleError);
+            }();
+
+            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
         } catch (error) {
             handleError(error);
         }
@@ -1199,20 +1218,22 @@ var Player = function () {
             }
 
             if (_this.element.nodeName !== 'IFRAME') {
-                var params = getOEmbedParameters(element, options);
-                var url = getVimeoUrl(params);
+                (function () {
+                    var params = getOEmbedParameters(element, options);
+                    var url = getVimeoUrl(params);
 
-                getOEmbedData(url, params).then(function (data) {
-                    var iframe = createEmbed(data, element);
-                    _this.element = iframe;
+                    getOEmbedData(url, params).then(function (data) {
+                        var iframe = createEmbed(data, element, params);
+                        _this.element = iframe;
 
-                    swapCallbacks(element, iframe);
-                    playerMap.set(_this.element, _this);
+                        swapCallbacks(element, iframe);
+                        playerMap.set(_this.element, _this);
 
-                    return data;
-                }).catch(function (error) {
-                    return reject(error);
-                });
+                        return data;
+                    }).catch(function (error) {
+                        return reject(error);
+                    });
+                })();
             }
         });
 

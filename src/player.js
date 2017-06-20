@@ -98,7 +98,7 @@ class Player {
                 const url = getVimeoUrl(params);
 
                 getOEmbedData(url, params).then((data) => {
-                    const iframe = createEmbed(data, element);
+                    const iframe = createEmbed(data, element, params);
                     this.element = iframe;
 
                     swapCallbacks(element, iframe);

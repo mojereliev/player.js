@@ -18,7 +18,8 @@ const oEmbedParameters = [
     'autoplay',
     'autopause',
     'loop',
-    'responsive'
+    'responsive',
+    'background'
 ];
 
 /**
@@ -103,7 +104,18 @@ export function getOEmbedData(videoUrl, params = {}) {
  * @param {HTMLElement} element The element to put the iframe in.
  * @return {HTMLIFrameElement} The iframe embed.
  */
-export function createEmbed({ html }, element) {
+export function createEmbed({ html }, element, params) {
+
+    if (params.background) {
+        const regular = /http([^"]+)/;
+        let url = html.match(regular)[0];
+        const separator = url.indexOf('?') < 0 ? '?' : '&';
+
+        url = `${url}${separator}background=1`;
+
+        html = html.replace(regular, url);
+    }
+
     if (!element) {
         throw new TypeError('An element must be provided');
     }
@@ -148,7 +160,7 @@ export function initializeEmbeds(parent = document) {
             const url = getVimeoUrl(params);
 
             getOEmbedData(url, params).then((data) => {
-                return createEmbed(data, element);
+                return createEmbed(data, element, params);
             }).catch(handleError);
         }
         catch (error) {
